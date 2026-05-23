@@ -26,8 +26,8 @@ def get_days_diff(last_accessed_str):
             hours = int(seconds // 3600)
             return f"Hoy ({hours} h)"
         if days == 1:
-            return "Ayer (1 d?a)"
-        return f"Hace {days} d?as"
+            return "Ayer (1 día)"
+        return f"Hace {days} días"
     except Exception:
         return "Nunca"
 
@@ -126,7 +126,7 @@ class TextApp(App):
         yield Header(show_clock=True)
         with TabbedContent():
             with TabPane("Seleccionar Rutas", id="select_tab"):
-                yield Label("[bold cyan]Selecciona una ruta de la tabla y elige una opci?n:[/bold cyan]")
+                yield Label("[bold cyan]Selecciona una ruta de la tabla y elige una opción:[/bold cyan]")
                 yield Input(placeholder="?? Buscar por nombre o ruta...", id="search-input")
                 yield DataTable(id="routes-table")
                 with Horizontal(id="actions-container"):
@@ -158,7 +158,7 @@ class TextApp(App):
                         yield Label("[bold red]Eliminar Proyecto (Desagrupa rutas):[/bold red]")
                         yield Select([], id="select-delete-project", prompt="Selecciona Proyecto a eliminar...")
                         yield Button("Eliminar Proyecto", id="btn-delete-project", variant="error")
-                yield Label(id="grouped-status", value="")
+                yield Label(id="grouped-status")
                 
             with TabPane("Registrar Nueva Ruta", id="create_tab"):
                 with Vertical(classes="input-group"):
@@ -170,8 +170,8 @@ class TextApp(App):
                 yield Button("Registrar Ruta", id="btn-register", variant="success")
                 yield Label(id="status-msg")
                 
-            with TabPane("?ltimos Accesos (Top 5)", id="recent_tab"):
-                yield Label("[bold yellow]?ltimos 5 proyectos accedidos y d?as desde el ?ltimo acceso:[/bold yellow]")
+            with TabPane("Últimos Accesos (Top 5)", id="recent_tab"):
+                yield Label("[bold yellow]Últimos 5 proyectos accedidos y días desde el último acceso:[/bold yellow]")
                 yield Static(id="recent-list")
                 
         yield Footer()
@@ -179,7 +179,7 @@ class TextApp(App):
     def on_mount(self) -> None:
         table = self.query_one("#routes-table", DataTable)
         table.cursor_type = "row"
-        table.add_columns("Nombre", "Ruta (Path)", "?ltimo Acceso")
+        table.add_columns("Nombre", "Ruta (Path)", "Último Acceso")
         
         # Expand tree root
         tree = self.query_one("#projects-tree", Tree)
@@ -216,8 +216,8 @@ class TextApp(App):
                 days_diff = get_days_diff(route.last_accessed)
                 content += f"[bold green]{i}. {route.name}[/bold green]\n"
                 content += f"   Ruta: {route.route}\n"
-                content += f"   ?ltimo acceso: {route.last_accessed if route.last_accessed else 'Nunca'}\n"
-                content += f"   D?as transcurridos: [bold yellow]{days_diff}[/bold yellow]\n\n"
+                content += f"   Último acceso: {route.last_accessed if route.last_accessed else 'Nunca'}\n"
+                content += f"   Días transcurridos: [bold yellow]{days_diff}[/bold yellow]\n\n"
             recent_list.update(content)
             
         # 3. Refresh Tree
@@ -306,7 +306,7 @@ class TextApp(App):
                 
                 if wt_path:
                     subprocess.Popen(f'"{wt_path}" -d "{route}" cmd /k "opencode ."', shell=True)
-                    lbl.update(f"[green]Abriendo Opencode en nueva pesta?a de Terminal para {name}...[/green]")
+                    lbl.update(f"[green]Abriendo Opencode en nueva pestaña de Terminal para {name}...[/green]")
                 else:
                     subprocess.Popen("start cmd /k \"opencode .\"", cwd=route, shell=True)
                     lbl.update(f"[green]Abriendo Opencode en {name} (CMD fallback)...[/green]")
@@ -369,7 +369,7 @@ class TextApp(App):
                 db.add_route(name, path)
                 name_input.value = ""
                 path_input.value = ""
-                status_msg.update(f"[green]Ruta '{name}' registrada con ?xito![/green]")
+                status_msg.update(f"[green]Ruta '{name}' registrada con éxito![/green]")
                 self.refresh_data()
             except Exception as e:
                 status_msg.update(f"[red]Error al guardar: {e}[/red]")
@@ -381,7 +381,7 @@ class TextApp(App):
                 return
             db.add_project(p_name)
             p_input.value = ""
-            grouped_status.update(f"[green]Proyecto '{p_name}' creado con ?xito![/green]")
+            grouped_status.update(f"[green]Proyecto '{p_name}' creado con éxito![/green]")
             self.refresh_data()
         elif button_id == "btn-assign-project":
             sel_route = self.query_one("#select-route", Select)
