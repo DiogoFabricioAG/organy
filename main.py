@@ -192,7 +192,6 @@ class TextApp(App):
             self.refresh_data(search_query=event.value)
 
     def refresh_data(self, search_query="") -> None:
-        # 1. Refresh Main Table
         table = self.query_one("#routes-table", DataTable)
         table.clear()
         routes = db.get_routes()
