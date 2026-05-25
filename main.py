@@ -26,8 +26,8 @@ def get_days_diff(last_accessed_str):
             hours = int(seconds // 3600)
             return f"Hoy ({hours} h)"
         if days == 1:
-            return "Ayer (1 día)"
-        return f"Hace {days} días"
+            return "Ayer (1 d?a)"
+        return f"Hace {days} d?as"
     except Exception:
         return "Nunca"
 
@@ -117,6 +117,7 @@ class TextApp(App):
     BINDINGS = [
         ("q", "quit", "Salir"),
         ("o", "open_opencode", "Abrir OpenCode"),
+        ("c", "open_compus", "Abrir Compus"),
         ("v", "open_vscode", "Abrir VS Code"),
         ("e", "open_explorer", "Abrir Carpeta"),
         ("d", "delete_selected", "Eliminar Ruta"),
@@ -126,11 +127,12 @@ class TextApp(App):
         yield Header(show_clock=True)
         with TabbedContent():
             with TabPane("Seleccionar Rutas", id="select_tab"):
-                yield Label("[bold cyan]Selecciona una ruta de la tabla y elige una opción:[/bold cyan]")
+                yield Label("[bold cyan]Selecciona una ruta de la tabla y elige una opci?n:[/bold cyan]")
                 yield Input(placeholder="?? Buscar por nombre o ruta...", id="search-input")
                 yield DataTable(id="routes-table")
                 with Horizontal(id="actions-container"):
                     yield Button("Abrir OpenCode [O]", id="btn-opencode", variant="success")
+                    yield Button("Abrir Compus [C]", id="btn-compus", variant="warning")
                     yield Button("Abrir VS Code [V]", id="btn-vscode", variant="primary")
                     yield Button("Abrir Carpeta [E]", id="btn-explorer", variant="default")
                     yield Button("Eliminar [D]", id="btn-delete", variant="error")
@@ -143,6 +145,7 @@ class TextApp(App):
                         yield Tree("Mis Proyectos", id="projects-tree")
                         with Horizontal(id="tree-actions-container"):
                             yield Button("Abrir OpenCode [O]", id="btn-tree-opencode", variant="success")
+                            yield Button("Abrir Compus [C]", id="btn-tree-compus", variant="warning")
                             yield Button("Abrir VS Code [V]", id="btn-tree-vscode", variant="primary")
                             yield Button("Abrir Carpeta [E]", id="btn-tree-explorer", variant="default")
                     with Vertical(id="project-management-column"):
@@ -170,8 +173,8 @@ class TextApp(App):
                 yield Button("Registrar Ruta", id="btn-register", variant="success")
                 yield Label(id="status-msg")
                 
-            with TabPane("Últimos Accesos (Top 5)", id="recent_tab"):
-                yield Label("[bold yellow]Últimos 5 proyectos accedidos y días desde el último acceso:[/bold yellow]")
+            with TabPane("?ltimos Accesos (Top 5)", id="recent_tab"):
+                yield Label("[bold yellow]?ltimos 5 proyectos accedidos y d?as desde el ?ltimo acceso:[/bold yellow]")
                 yield Static(id="recent-list")
                 
         yield Footer()
@@ -179,7 +182,7 @@ class TextApp(App):
     def on_mount(self) -> None:
         table = self.query_one("#routes-table", DataTable)
         table.cursor_type = "row"
-        table.add_columns("Nombre", "Ruta (Path)", "Último Acceso")
+        table.add_columns("Nombre", "Ruta (Path)", "?ltimo Acceso")
         
         # Expand tree root
         tree = self.query_one("#projects-tree", Tree)
@@ -215,8 +218,8 @@ class TextApp(App):
                 days_diff = get_days_diff(route.last_accessed)
                 content += f"[bold green]{i}. {route.name}[/bold green]\n"
                 content += f"   Ruta: {route.route}\n"
-                content += f"   Último acceso: {route.last_accessed if route.last_accessed else 'Nunca'}\n"
-                content += f"   Días transcurridos: [bold yellow]{days_diff}[/bold yellow]\n\n"
+                content += f"   ?ltimo acceso: {route.last_accessed if route.last_accessed else 'Nunca'}\n"
+                content += f"   D?as transcurridos: [bold yellow]{days_diff}[/bold yellow]\n\n"
             recent_list.update(content)
             
         # 3. Refresh Tree
@@ -305,10 +308,20 @@ class TextApp(App):
                 
                 if wt_path:
                     subprocess.Popen(f'"{wt_path}" -d "{route}" cmd /k "opencode ."', shell=True)
-                    lbl.update(f"[green]Abriendo Opencode en nueva pestaña de Terminal para {name}...[/green]")
+                    lbl.update(f"[green]Abriendo Opencode en nueva pesta?a de Terminal para {name}...[/green]")
                 else:
                     subprocess.Popen("start cmd /k \"opencode .\"", cwd=route, shell=True)
                     lbl.update(f"[green]Abriendo Opencode en {name} (CMD fallback)...[/green]")
+            elif action_type == "compus":
+                wt_alias = os.path.expandvars(r"%LOCALAPPDATA%\Microsoft\WindowsApps\wt.exe")
+                wt_path = wt_alias if os.path.exists(wt_alias) else (shutil.which("wt") or shutil.which("wt.exe"))
+                
+                if wt_path:
+                    subprocess.Popen(f'"{wt_path}" -d "{route}" cmd /k "compus"', shell=True)
+                    lbl.update(f"[green]Abriendo Compus en nueva pesta?a de Terminal para {name}...[/green]")
+                else:
+                    subprocess.Popen("start cmd /k \"compus\"", cwd=route, shell=True)
+                    lbl.update(f"[green]Abriendo Compus en {name} (CMD fallback)...[/green]")
             elif action_type == "vscode":
                 subprocess.Popen("code .", cwd=route, shell=True)
                 lbl.update(f"[green]Abriendo VS Code en {name}...[/green]")
@@ -320,6 +333,9 @@ class TextApp(App):
 
     def action_open_opencode(self) -> None:
         self.perform_action("opencode")
+
+    def action_open_compus(self) -> None:
+        self.perform_action("compus")
 
     def action_open_vscode(self) -> None:
         self.perform_action("vscode")
@@ -344,6 +360,8 @@ class TextApp(App):
         
         if button_id in ("btn-opencode", "btn-tree-opencode"):
             self.perform_action("opencode")
+        elif button_id in ("btn-compus", "btn-tree-compus"):
+            self.perform_action("compus")
         elif button_id in ("btn-vscode", "btn-tree-vscode"):
             self.perform_action("vscode")
         elif button_id in ("btn-explorer", "btn-tree-explorer"):
@@ -368,7 +386,7 @@ class TextApp(App):
                 db.add_route(name, path)
                 name_input.value = ""
                 path_input.value = ""
-                status_msg.update(f"[green]Ruta '{name}' registrada con éxito![/green]")
+                status_msg.update(f"[green]Ruta '{name}' registrada con ?xito![/green]")
                 self.refresh_data()
             except Exception as e:
                 status_msg.update(f"[red]Error al guardar: {e}[/red]")
@@ -380,7 +398,7 @@ class TextApp(App):
                 return
             db.add_project(p_name)
             p_input.value = ""
-            grouped_status.update(f"[green]Proyecto '{p_name}' creado con éxito![/green]")
+            grouped_status.update(f"[green]Proyecto '{p_name}' creado con ?xito![/green]")
             self.refresh_data()
         elif button_id == "btn-assign-project":
             sel_route = self.query_one("#select-route", Select)
